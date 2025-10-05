@@ -9,6 +9,7 @@ interface User {
   name: string
   email: string
   role: UserRole
+  walletBalance: number
 }
 
 interface AuthContextType {
@@ -17,6 +18,7 @@ interface AuthContextType {
   login: (email: string, password: string, role?: UserRole) => void
   signup: (name: string, email: string, password: string, role: UserRole) => void
   logout: () => void
+  updateBalance: (amount: number) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -31,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name: email.split("@")[0],
       email,
       role,
+      walletBalance: 5000, // Static balance
     })
   }
 
@@ -41,11 +44,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name,
       email,
       role,
+      walletBalance: 5000, // Static balance
     })
   }
 
   const logout = () => {
     setUser(null)
+  }
+
+  const updateBalance = (amount: number) => {
+    setUser(currentUser => {
+      if (!currentUser) return null;
+      return { ...currentUser, walletBalance: currentUser.walletBalance + amount };
+    });
   }
 
   return (
@@ -56,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         signup,
         logout,
+        updateBalance,
       }}
     >
       {children}

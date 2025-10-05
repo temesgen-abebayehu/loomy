@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, LogOut } from "lucide-react"
+import { User, LogOut, Wallet } from "lucide-react"
 
 export function Navbar() {
   const { isAuthenticated, user, logout } = useAuth()
@@ -37,25 +37,22 @@ export function Navbar() {
             <div className="hidden md:flex items-center gap-6">
               <Link
                 href="/events"
-                className={`text-sm font-medium transition-colors ${
-                  isActive("/events") ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`text-sm font-medium transition-colors ${isActive("/events") ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 Events
               </Link>
               <Link
                 href="/about"
-                className={`text-sm font-medium transition-colors ${
-                  isActive("/about") ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`text-sm font-medium transition-colors ${isActive("/about") ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 About
               </Link>
               <Link
                 href="/contact"
-                className={`text-sm font-medium transition-colors ${
-                  isActive("/contact") ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`text-sm font-medium transition-colors ${isActive("/contact") ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 Contact
               </Link>
@@ -63,30 +60,36 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-4">
-            {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10">
-                    <User className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <div className="px-2 py-1.5 text-sm font-medium">{user?.name}</div>
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">{user?.email}</div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href={getDashboardLink()}>Dashboard</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile">Profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            {isAuthenticated && user ? (
+              <>
+                <div className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium">
+                  <Wallet className="h-4 w-4 text-muted-foreground" />
+                  <span>{user.walletBalance.toLocaleString()} Birr</span>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10">
+                      <User className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <div className="px-2 py-1.5 text-sm font-medium">{user?.name}</div>
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">{user?.email}</div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href={getDashboardLink()}>Dashboard</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile">Profile</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={logout} className="text-destructive">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <>
                 <Button variant="ghost" asChild className="hover:text-primary">

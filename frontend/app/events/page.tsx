@@ -44,12 +44,12 @@ export default function EventListPage() {
               <h1 className="text-3xl md:text-4xl font-bold mb-2">Explore Events</h1>
               <p className="text-muted-foreground">Discover your next unforgettable experience</p>
             </div>
-            <Button asChild className="btn-glow bg-primary hover:bg-primary/90 text-primary-foreground">
+            {/* <Button asChild className="btn-glow bg-primary hover:bg-primary/90 text-primary-foreground">
               <Link href="/organizer/dashboard">
                 <Plus className="mr-2 h-4 w-4" />
                 Create Event
               </Link>
-            </Button>
+            </Button> */}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

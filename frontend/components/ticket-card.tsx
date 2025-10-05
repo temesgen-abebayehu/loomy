@@ -1,13 +1,31 @@
 "use client"
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, MapPin, Download, Share2, QrCode } from "lucide-react"
-import type { UserTicket } from "@/lib/types"
 
+// A more flexible type for the ticket prop
 interface TicketCardProps {
-  ticket: UserTicket
+  ticket: {
+    _id: string;
+    eventTitle: string;
+    eventImage: string;
+    status: 'upcoming' | 'past';
+    eventDate: string;
+    eventLocation: string;
+    ticketId: string;
+    quantity: number;
+    qrCode?: string; // Make qrCode optional
+    nftTokenId: string;
+  }
 }
 
 export function TicketCard({ ticket }: TicketCardProps) {
@@ -24,10 +42,6 @@ export function TicketCard({ ticket }: TicketCardProps) {
     } else {
       alert("Ticket link copied to clipboard!")
     }
-  }
-
-  const handleViewQR = () => {
-    alert("Displaying QR code for venue entry...")
   }
 
   return (
@@ -51,7 +65,7 @@ export function TicketCard({ ticket }: TicketCardProps) {
           <div className="space-y-1 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              <span>{ticket.eventDate}</span>
+              <span>{new Date(ticket.eventDate).toLocaleDateString()}</span>
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
@@ -72,11 +86,28 @@ export function TicketCard({ ticket }: TicketCardProps) {
         </div>
 
         <div className="flex gap-2">
-          {ticket.status === "upcoming" && (
-            <Button size="sm" className="flex-1" onClick={handleViewQR}>
-              <QrCode className="mr-2 h-4 w-4" />
-              QR Code
-            </Button>
+          {ticket.status === "upcoming" && ticket.qrCode && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="sm" className="flex-1">
+                  <QrCode className="mr-2 h-4 w-4" />
+                  QR Code
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>{ticket.eventTitle}</DialogTitle>
+                </DialogHeader>
+                <div className="flex items-center justify-center p-4">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${ticket.nftTokenId}`}
+                    alt="Ticket QR Code"
+                    width={250}
+                    height={250}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
           )}
           <Button size="sm" variant="outline" onClick={handleDownload} className="flex-1 bg-transparent">
             <Download className="mr-2 h-4 w-4" />

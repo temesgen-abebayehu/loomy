@@ -12,13 +12,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { events } from "@/lib/data"
 import { Calendar, MapPin, Users, Clock, Share2, Heart, Ticket } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
-import { ReservationDialog } from "@/components/reservation-dialog"
+import { ConfirmationDialog } from "@/components/confirmation-dialog"
 
 export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
-  const { user } = useAuth()
-  const [isReservationOpen, setIsReservationOpen] = useState(false)
+  const { user, updateBalance } = useAuth()
+  const [isConfirming, setIsConfirming] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
 
   const event = events.find((e) => e.id === resolvedParams.id)
@@ -39,13 +39,47 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     )
   }
 
-  const handleReserve = () => {
-    if (!user) {
-      router.push("/auth")
-      return
+  const handlePurchase = async () => {
+    if (!user) return;
+
+    const ticketPrice = event.ticketTypes[0].price;
+    if (user.walletBalance < ticketPrice) {
+      // This case is handled in the dialog, but as a safeguard
+      alert("Insufficient balance.");
+      return;
     }
-    setIsReservationOpen(true)
-  }
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/events/${event.id}/tickets`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ eventId: event.id })
+      });
+
+      if (!res.ok) {
+        throw new Error("Ticket purchase failed");
+      }
+
+      await res.json();
+      updateBalance(-ticketPrice); // Deduct from balance
+      setIsConfirming(false);
+      router.push(`/profile`);
+    } catch (error) {
+      console.error(error);
+      // Handle error, maybe show a toast
+    }
+  };
+
+  const openConfirmation = () => {
+    if (!user) {
+      router.push("/auth");
+      return;
+    }
+    setIsConfirming(true);
+  };
 
   const handleShare = () => {
     if (navigator.share) {
@@ -67,7 +101,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
       <main className="flex-1">
         {/* Hero Image */}
         <div className="relative h-[400px] md:h-[500px] w-full overflow-hidden bg-muted">
-          <img src={event.image || "/placeholder.svg"} alt={event.title} className="w-full h-full object-cover" />
+          <img src={event.imageUrl || "/placeholder.svg"} alt={event.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
         </div>
 
@@ -90,167 +124,79 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
                   <div className="flex items-center gap-4 mb-6">
                     <Avatar>
-                      <AvatarImage src={event.organizer.avatar || "/placeholder.svg"} />
-                      <AvatarFallback>{event.organizer.name[0]}</AvatarFallback>
+                      <AvatarImage src={"/placeholder.svg"} />
+                      <AvatarFallback>{event.organizer[0]}</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-medium">Organized by</p>
-                      <p className="text-sm text-muted-foreground">{event.organizer.name}</p>
+                      <p className="text-sm text-muted-foreground">{event.organizer}</p>
                     </div>
                   </div>
 
                   <Separator className="my-6" />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Calendar className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Date & Time</p>
-                        <p className="text-sm text-muted-foreground">{event.date}</p>
-                        <p className="text-sm text-muted-foreground">{event.time}</p>
-                      </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+                    <div className="space-y-1">
+                      <Calendar className="h-6 w-6 mx-auto text-primary" />
+                      <p className="text-sm font-medium">Date</p>
+                      <p className="text-xs text-muted-foreground">{event.date}</p>
                     </div>
-
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <MapPin className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Location</p>
-                        <p className="text-sm text-muted-foreground">{event.location}</p>
-                      </div>
+                    <div className="space-y-1">
+                      <MapPin className="h-6 w-6 mx-auto text-primary" />
+                      <p className="text-sm font-medium">Location</p>
+                      <p className="text-xs text-muted-foreground">{event.location}</p>
                     </div>
-
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Capacity</p>
-                        <p className="text-sm text-muted-foreground">
-                          {event.attendees} / {event.capacity} attendees
-                        </p>
-                      </div>
+                    <div className="space-y-1">
+                      <Ticket className="h-6 w-6 mx-auto text-primary" />
+                      <p className="text-sm font-medium">Price</p>
+                      <p className="text-xs text-muted-foreground">{event.price}</p>
                     </div>
-
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Clock className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Duration</p>
-                        <p className="text-sm text-muted-foreground">3 hours</p>
-                      </div>
+                    <div className="space-y-1">
+                      <Clock className="h-6 w-6 mx-auto text-primary" />
+                      <p className="text-sm font-medium">Time</p>
+                      <p className="text-xs text-muted-foreground">{event.time}</p>
                     </div>
                   </div>
 
                   <Separator className="my-6" />
 
                   <div>
-                    <h2 className="text-2xl font-bold mb-4">About This Event</h2>
-                    <p className="text-muted-foreground leading-relaxed mb-4">{event.description}</p>
-                    <p className="text-muted-foreground leading-relaxed">
-                      Join us for an unforgettable experience that brings together passionate individuals from around
-                      the world. This event promises to deliver exceptional content, networking opportunities, and
-                      memories that will last a lifetime.
-                    </p>
-                  </div>
-
-                  <Separator className="my-6" />
-
-                  <div>
-                    <h2 className="text-2xl font-bold mb-4">What to Expect</h2>
-                    <ul className="space-y-2 text-muted-foreground">
-                      <li className="flex items-start gap-2">
-                        <span className="text-primary mt-1">•</span>
-                        <span>Engaging presentations from industry leaders</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-primary mt-1">•</span>
-                        <span>Networking opportunities with like-minded individuals</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-primary mt-1">•</span>
-                        <span>Interactive workshops and hands-on activities</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-primary mt-1">•</span>
-                        <span>Complimentary refreshments and meals</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-primary mt-1">•</span>
-                        <span>Exclusive NFT ticket as a digital collectible</span>
-                      </li>
-                    </ul>
+                    <h2 className="text-2xl font-bold mb-4">About this event</h2>
+                    <div
+                      className="prose prose-stone dark:prose-invert max-w-none"
+                      dangerouslySetInnerHTML={{ __html: event.description }}
+                    />
                   </div>
                 </CardContent>
               </Card>
             </div>
 
             {/* Sidebar */}
-            <div className="lg:col-span-1">
-              <Card className="sticky top-4 border-2">
+            <div className="space-y-6">
+              <Card className="border-2">
                 <CardContent className="p-6">
-                  <div className="mb-6">
-                    <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-3xl font-bold">${event.price}</span>
-                      <span className="text-muted-foreground">per ticket</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Minted as NFT on blockchain</p>
+                  <h2 className="text-xl font-bold mb-4">Reserve Your Spot</h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="font-medium">Ticket Price</p>
+                    <p className="text-2xl font-bold">{event.price}</p>
                   </div>
-
-                  <div className="space-y-3 mb-6">
-                    <Button size="lg" className="w-full" onClick={handleReserve} disabled={event.status !== "upcoming"}>
-                      <Ticket className="mr-2 h-5 w-5" />
-                      {event.status === "upcoming" ? "Reserve Ticket" : "Event Ended"}
+                  <Button size="lg" className="w-full" onClick={openConfirmation}>
+                    Reserve Ticket
+                  </Button>
+                  <div className="flex items-center justify-center mt-4 gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground"
+                      onClick={() => setIsFavorited(!isFavorited)}
+                    >
+                      <Heart className={`mr-2 h-4 w-4 ${isFavorited ? "text-red-500 fill-current" : ""}`} />
+                      Favorite
                     </Button>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        className="w-full bg-transparent"
-                        onClick={() => setIsFavorited(!isFavorited)}
-                      >
-                        <Heart className={`mr-2 h-4 w-4 ${isFavorited ? "fill-current text-red-500" : ""}`} />
-                        Save
-                      </Button>
-                      <Button variant="outline" className="w-full bg-transparent" onClick={handleShare}>
-                        <Share2 className="mr-2 h-4 w-4" />
-                        Share
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Separator className="my-6" />
-
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium mb-2">Availability</p>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Tickets remaining</span>
-                        <span className="font-semibold">{event.capacity - event.attendees}</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2 mt-2">
-                        <div
-                          className="bg-primary h-2 rounded-full transition-all"
-                          style={{ width: `${(event.attendees / event.capacity) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-medium mb-2">Event Status</p>
-                      <Badge variant={event.status === "upcoming" ? "default" : "secondary"} className="capitalize">
-                        {event.status}
-                      </Badge>
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-medium mb-2">Blockchain</p>
-                      <p className="text-sm text-muted-foreground">Ethereum (ERC-721)</p>
-                    </div>
+                    <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={handleShare}>
+                      <Share2 className="mr-2 h-4 w-4" />
+                      Share
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -259,17 +205,18 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         </div>
       </main>
 
-      <Footer />
+      {user && (
+        <ConfirmationDialog
+          open={isConfirming}
+          onOpenChange={setIsConfirming}
+          onConfirm={handlePurchase}
+          eventName={event.title}
+          ticketPrice={event.ticketTypes[0].price}
+          userBalance={user.walletBalance}
+        />
+      )}
 
-      <ReservationDialog
-        event={event}
-        isOpen={isReservationOpen}
-        onClose={() => setIsReservationOpen(false)}
-        onSuccess={() => {
-          setIsReservationOpen(false)
-          router.push("/profile")
-        }}
-      />
+      <Footer />
     </div>
   )
 }

@@ -19,6 +19,18 @@ const TicketSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    hederaAccountId: {
+        type: String,
+    },
+    hederaTransactionId: {
+        type: String,
+    },
+    nftId: {
+        type: String,
+    },
+    qrCode: {
+        type: String,
+    },
 });
 
 module.exports = mongoose.model('Ticket', TicketSchema);

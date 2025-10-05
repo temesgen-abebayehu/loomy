@@ -24,4 +24,8 @@ router
     .put(protect, authorize('organizer', 'admin'), updateEvent)
     .delete(protect, authorize('organizer', 'admin'), deleteEvent);
 
+// Re-route into other resource routers
+const ticketRouter = require('./tickets');
+router.use('/:eventId/tickets', ticketRouter);
+
 module.exports = router;

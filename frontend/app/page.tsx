@@ -29,7 +29,7 @@ export default function HomePage() {
           <div className="text-center space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4 border border-primary/20">
               <Sparkles className="h-4 w-4" />
-              Powered by Blockchain Technology
+              Powered by Hedra Hashgraph Protocol
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-balance leading-tight">
               Discover Events.
