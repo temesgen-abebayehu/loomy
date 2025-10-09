@@ -31,8 +31,9 @@ export function Navbar() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-8">
-            <Link href="/" className="text-2xl font-bold text-primary">
-              Loomy
+            <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-primary">
+              <img src="/logo.png" alt="Loomy Logo" className="h-8 w-auto" />
+              <span>Loomy</span>
             </Link>
             <div className="hidden md:flex items-center gap-6">
               <Link
